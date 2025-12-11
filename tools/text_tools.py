@@ -22,11 +22,16 @@ class TextStegoWindow:
         notebook = ttk.Notebook(self.window)
         notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
+        # S-Tools tab (show first)
+        stools_frame = ttk.Frame(notebook)
+        notebook.add(stools_frame, text="S-Tools")
+        self.stools_tool = SToolsTool(stools_frame, self.window)
+
         # WBStego4Open tab
         wbstego_frame = ttk.Frame(notebook)
         notebook.add(wbstego_frame, text="WBStego4Open")
         self.wbstego_tool = WBStegoTool(wbstego_frame, self.window)
-        
+
         # Open WBStego GUI immediately when its tab is selected (no input validation)
         def _on_tab_changed(event):
             try:
@@ -45,11 +50,6 @@ class TextStegoWindow:
                 pass
 
         notebook.bind('<<NotebookTabChanged>>', _on_tab_changed)
-        
-        # S-Tools tab
-        stools_frame = ttk.Frame(notebook)
-        notebook.add(stools_frame, text="S-Tools")
-        self.stools_tool = SToolsTool(stools_frame, self.window)
 
 
 class WBStegoTool(BaseToolWindow):
