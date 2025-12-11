@@ -32,6 +32,23 @@ Using **Wazuh SIEM and EDR**, **Atomic Red Team**, **YARA**, **Suricata (IDS)** 
   <img src="assets/logos/kali.svg" alt="Kali / Hacking" width="120" height="auto" />
 </p>
 -->
+## 👨‍💻 Authors & Contributions
+
+**SOC Team Lead:**  
+👤 **Ahmed Emad Eldeen Abdelmoneam**
+
+<table>
+  <tr>
+    <td>
+      <ul>
+        <li>🔗 <b>LinkedIn:</b> <a href="https://www.linkedin.com/in/0x3omda/">linkedin.com/in/0x3omda</a></li>
+        <li>🌐 <b>Portfolio:</b> <a href="https://eng-ahmed-emad.github.io/AhmedEmad-Dev/">Portfolio</a></li>
+      </ul>
+    </td>
+    <td><img align="right" height="153" width="159" src="gif/anime-frieren.gif" /></td>
+    <td><img align="right" height="153" width="159" src="gif/giphy.gif" /></td>
+  </tr>
+</table>
 
 This toolkit provides a unified interface for multiple steganography tools across different data types:
 
