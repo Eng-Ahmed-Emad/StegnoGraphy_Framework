@@ -1,0 +1,327 @@
+"""
+Image Steganography Tools
+Steghide and Xiao Steganography
+"""
+
+import tkinter as tk
+from tkinter import ttk, messagebox
+import subprocess
+import os
+import sys
+from .base_tool import BaseToolWindow
+
+
+class ImageStegoWindow:
+    """Window for Image Steganography tools"""
+    
+    def __init__(self, parent):
+        self.parent = parent
+        self.window = tk.Toplevel(parent)
+        self.window.title("Image Steganography Tools")
+        self.window.geometry("750x650")
+        
+        # Create notebook for tabs
+        notebook = ttk.Notebook(self.window)
+        notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+        # Steghide tab
+        steghide_frame = ttk.Frame(notebook)
+        notebook.add(steghide_frame, text="Steghide")
+        self.steghide_tool = SteghideTool(steghide_frame, self.window)
+        
+        # Xiao Steganography tab
+        xiao_frame = ttk.Frame(notebook)
+        notebook.add(xiao_frame, text="Xiao Steganography")
+        self.xiao_tool = XiaoSteganographyTool(xiao_frame, self.window)
+
+
+class SteghideTool(BaseToolWindow):
+    """Steghide tool implementation"""
+    
+    def __init__(self, parent, root_window):
+        self.root_window = root_window
+        super().__init__(root_window, "Steghide")
+        self.window.destroy()  # Remove the default window
+        
+        # Recreate widgets in the provided parent
+        self.window = parent
+        self.create_widgets()
+    
+    def create_widgets(self):
+        """Create widgets in the parent frame"""
+        main_frame = ttk.Frame(self.window, padding="15")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        main_frame.columnconfigure(1, weight=1)
+        
+        # Title
+        title_label = ttk.Label(
+            main_frame,
+            text="Steghide",
+            font=("Arial", 14, "bold")
+        )
+        title_label.grid(row=0, column=0, columnspan=3, pady=(0, 15))
+        
+        # Input file
+        ttk.Label(main_frame, text="Input Image:", font=("Arial", 10)).grid(
+            row=1, column=0, sticky=tk.W, pady=5
+        )
+        ttk.Entry(main_frame, textvariable=self.input_file, width=50).grid(
+            row=1, column=1, sticky=(tk.W, tk.E), padx=5, pady=5
+        )
+        ttk.Button(main_frame, text="Browse", command=lambda: self.browse_input_file([
+            ("Image files", "*.jpg *.jpeg *.png *.bmp *.gif"), ("All files", "*.*")
+        ])).grid(row=1, column=2, padx=5, pady=5)
+        
+        # Output file
+        ttk.Label(main_frame, text="Output Image:", font=("Arial", 10)).grid(
+            row=2, column=0, sticky=tk.W, pady=5
+        )
+        ttk.Entry(main_frame, textvariable=self.output_file, width=50).grid(
+            row=2, column=1, sticky=(tk.W, tk.E), padx=5, pady=5
+        )
+        ttk.Button(main_frame, text="Browse", command=lambda: self.browse_output_file([
+            ("Image files", "*.jpg *.jpeg *.png *.bmp *.gif"), ("All files", "*.*")
+        ])).grid(row=2, column=2, padx=5, pady=5)
+        
+        # Message
+        ttk.Label(main_frame, text="Secret Message:", font=("Arial", 10)).grid(
+            row=3, column=0, sticky=tk.NW, pady=5
+        )
+        self.message_text = tk.Text(main_frame, width=50, height=5, wrap=tk.WORD)
+        self.message_text.grid(row=3, column=1, columnspan=2, sticky=(tk.W, tk.E), padx=5, pady=5)
+        
+        # Password
+        ttk.Label(main_frame, text="Password:", font=("Arial", 10)).grid(
+            row=4, column=0, sticky=tk.W, pady=5
+        )
+        ttk.Entry(main_frame, textvariable=self.password, width=50, show="*").grid(
+            row=4, column=1, columnspan=2, sticky=(tk.W, tk.E), padx=5, pady=5
+        )
+        
+        # Buttons
+        buttons_frame = ttk.Frame(main_frame)
+        buttons_frame.grid(row=5, column=0, columnspan=3, pady=15)
+        
+        ttk.Button(buttons_frame, text="Hide Message", command=self.hide_message, width=20).grid(row=0, column=0, padx=10)
+        ttk.Button(buttons_frame, text="Extract Message", command=self.extract_message, width=20).grid(row=0, column=1, padx=10)
+        
+        # Log
+        ttk.Label(main_frame, text="Output:", font=("Arial", 10)).grid(row=6, column=0, sticky=tk.NW, pady=(10, 5))
+        self.log_text = tk.Text(main_frame, width=70, height=8, wrap=tk.WORD, state=tk.DISABLED)
+        self.log_text.grid(row=7, column=0, columnspan=3, sticky=(tk.W, tk.E, tk.N, tk.S), padx=5, pady=5)
+        main_frame.rowconfigure(7, weight=1)
+    
+    def hide_message(self):
+        """Hide message using Steghide"""
+        if not self.validate_inputs(require_message=True, require_password=True):
+            return
+        
+        self.clear_log()
+        self.log("Starting Steghide hide operation...")
+        
+        try:
+            # Check if steghide is available
+            steghide_path = self.find_steghide()
+            if not steghide_path:
+                # Simulate the process
+                self.log("Steghide not found. Simulating hide operation...")
+                self.simulate_hide()
+                return
+            
+            # Create message file
+            msg_file = os.path.join(os.path.dirname(self.output_file.get()), "temp_msg.txt")
+            with open(msg_file, "w", encoding="utf-8") as f:
+                f.write(self.get_message())
+            
+            # Run steghide embed
+            cmd = [
+                steghide_path,
+                "embed",
+                "-cf", self.input_file.get(),
+                "-ef", msg_file,
+                "-sf", self.output_file.get(),
+                "-p", self.password.get()
+            ]
+            
+            self.log(f"Running: {' '.join(cmd)}")
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+            
+            # Clean up temp file
+            if os.path.exists(msg_file):
+                os.remove(msg_file)
+            
+            if result.returncode == 0:
+                self.log("Message hidden successfully!", "SUCCESS")
+                messagebox.showinfo("Success", f"Message hidden successfully!\nOutput saved to: {self.output_file.get()}")
+            else:
+                self.log(f"Error: {result.stderr}", "ERROR")
+                messagebox.showerror("Error", f"Failed to hide message:\n{result.stderr}")
+        
+        except subprocess.TimeoutExpired:
+            self.log("Operation timed out", "ERROR")
+            messagebox.showerror("Error", "Operation timed out")
+        except Exception as e:
+            self.log(f"Exception: {str(e)}", "ERROR")
+            messagebox.showerror("Error", f"An error occurred: {str(e)}")
+    
+    def extract_message(self):
+        """Extract message using Steghide"""
+        if not self.validate_inputs(require_message=False, require_password=True):
+            return
+        
+        self.clear_log()
+        self.log("Starting Steghide extract operation...")
+        
+        try:
+            steghide_path = self.find_steghide()
+            if not steghide_path:
+                self.log("Steghide not found. Simulating extract operation...")
+                self.simulate_extract()
+                return
+            
+            # Extract to temp file
+            msg_file = os.path.join(os.path.dirname(self.input_file.get()), "temp_extracted.txt")
+            
+            cmd = [
+                steghide_path,
+                "extract",
+                "-sf", self.input_file.get(),
+                "-xf", msg_file,
+                "-p", self.password.get()
+            ]
+            
+            self.log(f"Running: {' '.join(cmd)}")
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+            
+            if result.returncode == 0 and os.path.exists(msg_file):
+                with open(msg_file, "r", encoding="utf-8") as f:
+                    extracted_msg = f.read()
+                self.set_message(extracted_msg)
+                self.log("Message extracted successfully!", "SUCCESS")
+                messagebox.showinfo("Success", "Message extracted successfully!")
+                os.remove(msg_file)
+            else:
+                self.log(f"Error: {result.stderr}", "ERROR")
+                messagebox.showerror("Error", f"Failed to extract message:\n{result.stderr}")
+        
+        except Exception as e:
+            self.log(f"Exception: {str(e)}", "ERROR")
+            messagebox.showerror("Error", f"An error occurred: {str(e)}")
+    
+    def find_steghide(self):
+        """Find steghide executable"""
+        # Check Tools folder first
+        possible_paths = [
+            os.path.join(os.path.dirname(__file__), "..", "Tools", "steghide", "steghide.exe"),
+            os.path.join(os.path.dirname(__file__), "..", "tools", "steghide", "steghide.exe"),
+            os.path.join(os.path.dirname(__file__), "..", "Tools", "steghide.exe"),
+            "steghide.exe",
+            "steghide",
+        ]
+        
+        for path in possible_paths:
+            abs_path = os.path.abspath(path)
+            if os.path.exists(abs_path):
+                return abs_path
+        
+        # Check if command exists in PATH
+        for cmd in ["steghide", "steghide.exe"]:
+            if self.command_exists(cmd):
+                return cmd
+        return None
+    
+    def command_exists(self, cmd):
+        """Check if command exists in PATH"""
+        try:
+            subprocess.run([cmd, "--version"], capture_output=True, timeout=2)
+            return True
+        except:
+            return False
+    
+    def simulate_hide(self):
+        """Simulate hide operation"""
+        import time
+        time.sleep(1)
+        self.log("Simulated: Message hidden in image", "SUCCESS")
+        self.log(f"Input: {self.input_file.get()}")
+        self.log(f"Output: {self.output_file.get()}")
+        self.log("Note: This is a simulation. Install Steghide for actual functionality.")
+        messagebox.showinfo("Simulation", "Hide operation simulated.\nInstall Steghide for actual functionality.")
+    
+    def simulate_extract(self):
+        """Simulate extract operation"""
+        import time
+        time.sleep(1)
+        self.log("Simulated: Message extracted from image", "SUCCESS")
+        self.log(f"Input: {self.input_file.get()}")
+        self.log("Note: This is a simulation. Install Steghide for actual functionality.")
+        self.set_message("Simulated extracted message")
+        messagebox.showinfo("Simulation", "Extract operation simulated.\nInstall Steghide for actual functionality.")
+
+
+class XiaoSteganographyTool(BaseToolWindow):
+    """Xiao Steganography tool implementation"""
+    
+    def __init__(self, parent, root_window):
+        self.root_window = root_window
+        super().__init__(root_window, "Xiao Steganography")
+        self.window.destroy()
+        self.window = parent
+        self.create_widgets()
+    
+    def create_widgets(self):
+        """Create widgets"""
+        main_frame = ttk.Frame(self.window, padding="15")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        main_frame.columnconfigure(1, weight=1)
+        
+        title_label = ttk.Label(main_frame, text="Xiao Steganography", font=("Arial", 14, "bold"))
+        title_label.grid(row=0, column=0, columnspan=3, pady=(0, 15))
+        
+        ttk.Label(main_frame, text="Input Image:", font=("Arial", 10)).grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Entry(main_frame, textvariable=self.input_file, width=50).grid(row=1, column=1, sticky=(tk.W, tk.E), padx=5, pady=5)
+        ttk.Button(main_frame, text="Browse", command=lambda: self.browse_input_file([
+            ("Image files", "*.jpg *.jpeg *.png *.bmp"), ("All files", "*.*")
+        ])).grid(row=1, column=2, padx=5, pady=5)
+        
+        ttk.Label(main_frame, text="Output Image:", font=("Arial", 10)).grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Entry(main_frame, textvariable=self.output_file, width=50).grid(row=2, column=1, sticky=(tk.W, tk.E), padx=5, pady=5)
+        ttk.Button(main_frame, text="Browse", command=lambda: self.browse_output_file([
+            ("Image files", "*.jpg *.jpeg *.png *.bmp"), ("All files", "*.*")
+        ])).grid(row=2, column=2, padx=5, pady=5)
+        
+        ttk.Label(main_frame, text="Secret Message:", font=("Arial", 10)).grid(row=3, column=0, sticky=tk.NW, pady=5)
+        self.message_text = tk.Text(main_frame, width=50, height=5, wrap=tk.WORD)
+        self.message_text.grid(row=3, column=1, columnspan=2, sticky=(tk.W, tk.E), padx=5, pady=5)
+        
+        buttons_frame = ttk.Frame(main_frame)
+        buttons_frame.grid(row=4, column=0, columnspan=3, pady=15)
+        ttk.Button(buttons_frame, text="Hide Message", command=self.hide_message, width=20).grid(row=0, column=0, padx=10)
+        ttk.Button(buttons_frame, text="Extract Message", command=self.extract_message, width=20).grid(row=0, column=1, padx=10)
+        
+        ttk.Label(main_frame, text="Output:", font=("Arial", 10)).grid(row=5, column=0, sticky=tk.NW, pady=(10, 5))
+        self.log_text = tk.Text(main_frame, width=70, height=8, wrap=tk.WORD, state=tk.DISABLED)
+        self.log_text.grid(row=6, column=0, columnspan=3, sticky=(tk.W, tk.E, tk.N, tk.S), padx=5, pady=5)
+        main_frame.rowconfigure(6, weight=1)
+    
+    def hide_message(self):
+        """Hide message - GUI tool simulation"""
+        if not self.validate_inputs(require_message=True, require_password=False):
+            return
+        
+        self.clear_log()
+        self.log("Opening Xiao Steganography GUI tool...")
+        self.log("Note: This tool requires the Xiao Steganography GUI application.")
+        self.log("Please use the GUI tool to hide your message.")
+        messagebox.showinfo("GUI Tool", "Xiao Steganography is a GUI-only tool.\nPlease use the standalone application to hide messages.")
+    
+    def extract_message(self):
+        """Extract message - GUI tool simulation"""
+        if not self.validate_inputs(require_message=False, require_password=False):
+            return
+        
+        self.clear_log()
+        self.log("Opening Xiao Steganography GUI tool...")
+        self.log("Note: This tool requires the Xiao Steganography GUI application.")
+        messagebox.showinfo("GUI Tool", "Xiao Steganography is a GUI-only tool.\nPlease use the standalone application to extract messages.")
+

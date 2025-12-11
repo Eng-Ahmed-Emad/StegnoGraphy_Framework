@@ -1,0 +1,17 @@
+# Steganography Toolkit - Python Requirements
+# This application uses Python's built-in libraries only
+
+# No external dependencies required
+# The application uses:
+# - tkinter (included with Python)
+# - subprocess (included with Python)
+# - os (included with Python)
+
+# Note: Some tools may require external executables:
+# - Steghide (for image steganography)
+# - MP3Stego (for audio steganography)
+# - Sysinternals Streams (for ADS operations)
+# - Various GUI tools (S-Tools, DeepSound, etc.)
+
+# Python version: 3.6 or higher recommended
+
