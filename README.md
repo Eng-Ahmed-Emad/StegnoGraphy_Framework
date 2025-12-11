@@ -1,8 +1,37 @@
-# Steganography Toolkit
+# 🛡️ Steganography Toolkit  
+### By **Ahmed Emad Eldeen Abdelmoneam**
 
-A comprehensive Python GUI application for various steganography tools, designed for educational and research purposes.
+Using **Wazuh SIEM and EDR**, **Atomic Red Team**, **YARA**, **Suricata (IDS)**  **VirusTotal Auto-Removal**,**Custom Rules By 3omda** , **SocSOCFortress Wazuh Rules**
 
-## Features
+<!-- Badges row -->
+![License](https://img.shields.io/badge/License-MIT-blue.svg)
+![Contributions Welcome](https://img.shields.io/badge/Contributions-Welcome-brightgreen.svg)
+![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20Windows-lightgrey.svg)
+![Security](https://img.shields.io/badge/SOC-Security_Operations_Center-critical.svg)
+
+<!-- Tool / project badges -->
+![Wazuh](https://img.shields.io/badge/Wazuh-%23000000?style=flat&logo=wazuh&logoColor=white)
+![Atomic Red Team](https://img.shields.io/badge/Atomic_Red_Team-%23FF6A00?style=flat&logo=atom&logoColor=white)
+![Suricata](https://img.shields.io/badge/Suricata-%230078D7?style=flat&logo=suricata&logoColor=white)
+![Hacking / Kali](https://img.shields.io/badge/Hacking-%23A0B0C0?style=flat&logo=kali-linux&logoColor=white)
+
+<!-- Added badges -->
+![YARA](https://img.shields.io/badge/YARA-%23219827?style=flat&logo=yara&logoColor=white)
+![VirusTotal](https://img.shields.io/badge/VirusTotal-%23FF4747?style=flat&logo=virustotal&logoColor=white)
+![FIM (File Integrity Monitoring)](https://img.shields.io/badge/FIM-%23663399?style=flat&logo=sqlite&logoColor=white)
+![Auditing & Logging](https://img.shields.io/badge/Auditing_%26_Logging-%23007ACC?style=flat&logo=elastic&logoColor=white)
+![Firewall Hardening](https://img.shields.io/badge/Firewall-Hardening-%230F172A?style=flat&logo=linux&logoColor=white)
+
+
+<!-- Optional: logos row using project assets (uncomment & add files under assets/logos/) -->
+<!--
+<p align="center">
+  <img src="assets/logos/wazuh.svg" alt="Wazuh" width="120" height="auto" />
+  <img src="assets/logos/atomic-red-team.svg" alt="Atomic Red Team" width="120" height="auto" />
+  <img src="assets/logos/suricata.svg" alt="Suricata" width="120" height="auto" />
+  <img src="assets/logos/kali.svg" alt="Kali / Hacking" width="120" height="auto" />
+</p>
+-->
 
 This toolkit provides a unified interface for multiple steganography tools across different data types:
 
