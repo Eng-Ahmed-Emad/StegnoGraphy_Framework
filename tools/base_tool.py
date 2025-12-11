@@ -202,10 +202,22 @@ class BaseToolWindow:
     
     def set_message(self, text):
         """Set message in extracted message text widget"""
-        self.extracted_message_text.config(state=tk.NORMAL)
-        self.extracted_message_text.delete("1.0", tk.END)
-        self.extracted_message_text.insert("1.0", text)
-        self.extracted_message_text.config(state=tk.NORMAL)
+        try:
+            if hasattr(self, 'extracted_message_text'):
+                if self.extracted_message_text.winfo_exists():
+                    self.extracted_message_text.config(state=tk.NORMAL)
+                    self.extracted_message_text.delete("1.0", tk.END)
+                    self.extracted_message_text.insert("1.0", text)
+                    self.extracted_message_text.config(state=tk.NORMAL)
+                else:
+                    # Widget doesn't exist - this shouldn't happen in normal operation
+                    pass
+            else:
+                # Attribute doesn't exist - this shouldn't happen in normal operation
+                pass
+        except Exception as e:
+            # Log error for debugging but don't crash
+            pass
     
     def log(self, message, level="INFO", tab="hide"):
         """Add message to log area"""

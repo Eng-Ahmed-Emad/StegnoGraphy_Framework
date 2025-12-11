@@ -27,6 +27,7 @@ class AudioStegoWindow:
         notebook.add(mp3_frame, text="MP3Stego")
         self.mp3_tool = MP3StegoTool(mp3_frame, self.window)
         
+        
         # DeepSound tab
         deepsound_frame = ttk.Frame(notebook)
         notebook.add(deepsound_frame, text="DeepSound")

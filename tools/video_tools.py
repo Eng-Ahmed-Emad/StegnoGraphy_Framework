@@ -27,7 +27,10 @@ class VideoStegoWindow:
         notebook.add(gif_frame, text="GIF Shuffle Tool")
         self.gif_tool = GIFShuffleTool(gif_frame, self.window)
         
-    # (Hide it Pro removed)
+        # DeEgger Embedder GUI launcher tab
+        deegger_frame = ttk.Frame(notebook)
+        notebook.add(deegger_frame, text="DeEgger Embedder")
+        self.deegger_tool = DeEggerTool(deegger_frame, self.window)
 
 
 class GIFShuffleTool(BaseToolWindow):
@@ -205,4 +208,32 @@ class GIFShuffleTool(BaseToolWindow):
 
 
     # HideItPro tool removed from project
+
+
+class DeEggerTool:
+    """Simple launcher for the DeEgger Embedder GUI."""
+
+    def __init__(self, parent, root_window):
+        self.parent = parent
+        self.root_window = root_window
+
+        lbl = ttk.Label(parent, text="DeEgger Embedder Launcher", font=(None, 11, "bold"))
+        lbl.pack(anchor="w", padx=10, pady=(8, 4))
+
+        info = ttk.Label(parent, text="Launch the DeEgger Embedder GUI application.")
+        info.pack(anchor="w", padx=10, pady=(0, 8))
+
+        btn = ttk.Button(parent, text="Launch DeEgger Embedder", command=self.launch_deegger)
+        btn.pack(anchor="w", padx=10, pady=(0, 8))
+
+    def launch_deegger(self):
+        # Path provided by the user
+        deegger_path = r"E:\Ahmed Projects\StegnoGraphy_Framework\tools\DeEgger Embedder.exe"
+        if not os.path.exists(deegger_path):
+            messagebox.showerror("Error", f"DeEgger executable not found at:\n{deegger_path}")
+            return
+        try:
+            subprocess.Popen([deegger_path])
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to launch DeEgger:\n{str(e)}")
 

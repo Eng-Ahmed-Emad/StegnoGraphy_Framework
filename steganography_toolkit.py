@@ -125,7 +125,7 @@ class SteganographyToolkit:
         self.create_category_button(
             categories_frame, 1, 0,
             "Video/GIF Steganography",
-            "GIF Shuffle Tool",
+            "GIF Shuffle Tool\nDeEgger",
             lambda: VideoStegoWindow(self.root)
         )
         
@@ -141,7 +141,7 @@ class SteganographyToolkit:
         self.create_category_button(
             categories_frame, 2, 0,
             "ADS Tools",
-            "Streams\nADS Viewer",
+            "ADS Viewer",
             lambda: ADSToolsWindow(self.root)
         )
         
@@ -160,7 +160,15 @@ class SteganographyToolkit:
             font=("Arial", 9),
             foreground="gray"
         )
-        footer_label.grid(row=3, column=0, pady=(30, 0))
+        footer_label.grid(row=3, column=0, pady=(30, 10))
+        
+        # Exit button
+        exit_button = ttk.Button(
+            main_frame,
+            text="Exit",
+            command=self.exit_application
+        )
+        exit_button.grid(row=4, column=0, pady=(0, 0))
     
     def create_category_button(self, parent, row, col, title, tools, command):
         """Create a styled category button"""
@@ -189,6 +197,11 @@ class SteganographyToolkit:
             command=command
         )
         open_button.grid(row=2, column=0, pady=(0, 15))
+    
+    def exit_application(self):
+        """Exit the steganography application"""
+        if messagebox.askokcancel("Exit", "Are you sure you want to exit the Steganography Toolkit?"):
+            self.root.quit()
 
 
 def main():

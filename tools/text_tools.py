@@ -1,6 +1,6 @@
 """
 Text Steganography Tools
-WBStego4Open and S-Tools
+S-Tools and SNOW
 """
 
 import tkinter as tk
@@ -22,72 +22,37 @@ class TextStegoWindow:
         notebook = ttk.Notebook(self.window)
         notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
-        # S-Tools tab (show first)
+        # S-Tools tab
         stools_frame = ttk.Frame(notebook)
         notebook.add(stools_frame, text="S-Tools")
         self.stools_tool = SToolsTool(stools_frame, self.window)
-
-        # WBStego4Open tab
-        wbstego_frame = ttk.Frame(notebook)
-        notebook.add(wbstego_frame, text="WBStego4Open")
-        self.wbstego_tool = WBStegoTool(wbstego_frame, self.window)
-
-        # Open WBStego GUI immediately when its tab is selected (no input validation)
-        def _on_tab_changed(event):
-            try:
-                selected = notebook.tab(notebook.select(), "text")
-                if selected == "WBStego4Open":
-                    # attempt to open the WBStego application immediately
-                    try:
-                        self.wbstego_tool.open_wbstego()
-                    except Exception:
-                        # Fallback: call hide_message if open_wbstego isn't available
-                        try:
-                            self.wbstego_tool.hide_message()
-                        except Exception:
-                            pass
-            except Exception:
-                pass
-
-        notebook.bind('<<NotebookTabChanged>>', _on_tab_changed)
+        
+        # SNOW tab
+        snow_frame = ttk.Frame(notebook)
+        notebook.add(snow_frame, text="SNOW")
+        self.snow_tool = SNOWTool(snow_frame, self.window)
+        
+        # Handle window close event
+        self.window.protocol("WM_DELETE_WINDOW", self.on_closing)
+    
+    def on_closing(self):
+        """Handle window closing event"""
+        try:
+            # Close the window
+            self.window.destroy()
+        except Exception:
+            pass
 
 
-class WBStegoTool(BaseToolWindow):
-    """WBStego4Open tool implementation"""
+class SNOWTool(BaseToolWindow):
+    """SNOW (Steganographic Nature Of Whitespace) tool implementation"""
     
     def __init__(self, parent, root_window):
         self.root_window = root_window
-        super().__init__(parent, "WBStego4Open")
+        super().__init__(parent, "SNOW")
 
-    def open_wbstego(self):
-        """Open the WBStego GUI application without validating input fields."""
-        self.clear_log("hide")
-        self.log("Opening WBStego GUI application...", tab="hide")
-
-        wbstego_path = self.find_wbstego()
-        if not wbstego_path:
-            # Prompt user to locate the executable
-            user_choice = filedialog.askopenfilename(
-                title="Locate WBStego executable",
-                initialdir=os.path.abspath(os.path.join(os.path.dirname(__file__), '..')),
-                filetypes=[("Executables", "*.exe"), ("All files", "*.*")]
-            )
-            if user_choice:
-                wbstego_path = user_choice
-
-        if wbstego_path:
-            try:
-                subprocess.Popen([wbstego_path], cwd=os.path.dirname(wbstego_path))
-                self.log(f"WBStego opened successfully: {wbstego_path}", "SUCCESS", tab="hide")
-            except Exception as e:
-                self.log(f"Error opening WBStego: {str(e)}", "ERROR", tab="hide")
-                messagebox.showerror("Error", f"Failed to open WBStego GUI:\n{str(e)}")
-        else:
-            self.log("WBStego executable not found.", "ERROR", tab="hide")
-            messagebox.showerror("Error", "WBStego executable not found.\nPlease ensure wbStego4.3open.exe is available in the Tools folder or locate it when prompted.")
-    
     def create_hide_tab(self, parent):
-        """Create Hide tab with text file types"""
+        """Create Hide tab for SNOW"""
         super().create_hide_tab(parent)
         # Update browse buttons for text files
         for widget in parent.winfo_children():
@@ -103,7 +68,7 @@ class WBStegoTool(BaseToolWindow):
                     ]))
     
     def create_extract_tab(self, parent):
-        """Create Extract tab with text file types"""
+        """Create Extract tab for SNOW"""
         super().create_extract_tab(parent)
         # Update browse button for text files
         for widget in parent.winfo_children():
@@ -113,18 +78,18 @@ class WBStegoTool(BaseToolWindow):
                 ]))
     
     def hide_message(self):
-        """Hide message using WBStego4Open"""
+        """Hide message using SNOW"""
         if not self.validate_inputs(require_message=True, require_password=True, tab="hide"):
             return
         
         self.clear_log("hide")
-        self.log("Starting WBStego4Open hide operation...", tab="hide")
+        self.log("Starting SNOW hide operation...", tab="hide")
         
         try:
-            wbstego_path = self.find_wbstego()
-            if not wbstego_path:
-                self.log("WBStego4Open not found. Please ensure it's installed.", "ERROR", tab="hide")
-                messagebox.showerror("Error", "WBStego4Open not found. Please ensure it's installed.")
+            snow_path = self.find_snow()
+            if not snow_path:
+                self.log("SNOW executable not found.", "ERROR", tab="hide")
+                messagebox.showerror("Error", "SNOW executable not found. Please ensure snow.exe is available.")
                 return
             
             # Create message file
@@ -132,23 +97,22 @@ class WBStegoTool(BaseToolWindow):
             with open(msg_file, "w", encoding="utf-8") as f:
                 f.write(self.get_message())
             
-            # WBStego encode command (example)
+            # SNOW encode command
             cmd = [
-                wbstego_path,
-                "-e",
-                "-i", self.input_file.get(),
+                snow_path,
+                "-C",
+                "-p", self.password.get(),
                 "-m", msg_file,
-                "-o", self.output_file.get(),
-                "-p", self.password.get()
+                self.input_file.get(),
+                self.output_file.get()
             ]
             
             self.log(f"Running: {' '.join(cmd)}", tab="hide")
             try:
-                # Run with the executable's directory as cwd so any relative DLLs/files are found
-                result = subprocess.run(cmd, capture_output=True, text=True, timeout=60, cwd=os.path.dirname(wbstego_path))
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
             except Exception as e:
-                self.log(f"Exception running WBStego: {e}", "ERROR", tab="hide")
-                messagebox.showerror("Error", f"Failed to run WBStego:\n{e}")
+                self.log(f"Exception running SNOW: {e}", "ERROR", tab="hide")
+                messagebox.showerror("Error", f"Failed to run SNOW:\n{e}")
                 return
             
             if os.path.exists(msg_file):
@@ -160,99 +124,119 @@ class WBStegoTool(BaseToolWindow):
             else:
                 stderr = result.stderr or ""
                 self.log(f"Error: {stderr}", "ERROR", tab="hide")
-                # Detect common runtime error and offer to open GUI instead
-                if "Runtime error 217" in stderr or "Runtime error" in stderr:
-                    open_gui = messagebox.askyesno("WBStego runtime error",
-                                                   "WBStego crashed with a runtime error while running command-line mode.\nWould you like to open the WBStego GUI instead to perform the operation manually? (Recommended)")
-                    if open_gui:
-                        try:
-                            subprocess.Popen([wbstego_path], cwd=os.path.dirname(wbstego_path))
-                        except Exception as e:
-                            messagebox.showerror("Error", f"Failed to open WBStego GUI:\n{e}")
-                    else:
-                        messagebox.showerror("Error", f"Failed to hide message:\n{stderr}")
-                else:
-                    messagebox.showerror("Error", f"Failed to hide message:\n{stderr}")
+                messagebox.showerror("Error", f"Failed to hide message:\n{stderr}")
         
         except Exception as e:
             self.log(f"Exception: {str(e)}", "ERROR", tab="hide")
             messagebox.showerror("Error", f"An error occurred: {str(e)}")
     
     def extract_message(self):
-        """Extract message using WBStego4Open"""
+        """Extract message using SNOW"""
         if not self.validate_inputs(require_message=False, require_password=True, tab="extract"):
             return
         
         self.clear_log("extract")
-        self.log("Starting WBStego4Open extract operation...", tab="extract")
+        self.log("Starting SNOW extract operation...", tab="extract")
         
         try:
-            wbstego_path = self.find_wbstego()
-            if not wbstego_path:
-                self.log("WBStego4Open not found. Please ensure it's installed.", "ERROR", tab="extract")
-                messagebox.showerror("Error", "WBStego4Open not found. Please ensure it's installed.")
+            snow_path = self.find_snow()
+            if not snow_path:
+                self.log("SNOW executable not found.", "ERROR", tab="extract")
+                messagebox.showerror("Error", "SNOW executable not found. Please ensure snow.exe is available.")
                 return
             
-            msg_file = os.path.join(os.path.dirname(self.input_file.get()), "temp_extracted.txt")
+            input_file = self.input_file.get()
+            if not os.path.exists(input_file):
+                self.log(f"Input file not found: {input_file}", "ERROR", tab="extract")
+                messagebox.showerror("Error", f"Input file not found: {input_file}")
+                return
             
+            # Create temporary file to store extracted message (use absolute path with forward slashes)
+            temp_dir = os.path.dirname(os.path.abspath(input_file))
+            msg_file = os.path.join(temp_dir, "snow_extracted_msg.txt")
+            
+            # Convert paths to use forward slashes for consistency
+            snow_path_normalized = snow_path.replace("\\", "/")
+            input_file_normalized = input_file.replace("\\", "/")
+            msg_file_normalized = msg_file.replace("\\", "/")
+            
+            # SNOW decode command - use -m to specify output message file
             cmd = [
-                wbstego_path,
-                "-d",
-                "-i", self.input_file.get(),
-                "-o", msg_file,
-                "-p", self.password.get()
+                snow_path_normalized,
+                "-C",
+                "-Q",
+                "-p", self.password.get(),
+                "-m", msg_file_normalized,
+                input_file_normalized
             ]
             
+            self.log(f"SNOW path: {snow_path_normalized}", tab="extract")
+            self.log(f"Input file: {input_file_normalized}", tab="extract")
+            self.log(f"Output file: {msg_file_normalized}", tab="extract")
             self.log(f"Running: {' '.join(cmd)}", tab="extract")
+            
             try:
-                result = subprocess.run(cmd, capture_output=True, text=True, timeout=60, cwd=os.path.dirname(wbstego_path))
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+                self.log(f"Return code: {result.returncode}", tab="extract")
+                
+                if result.stdout:
+                    self.log(f"Stdout: {result.stdout}", tab="extract")
+                if result.stderr:
+                    self.log(f"Stderr: {result.stderr}", tab="extract")
+                
             except Exception as e:
-                self.log(f"Exception running WBStego: {e}", "ERROR", tab="extract")
-                messagebox.showerror("Error", f"Failed to run WBStego:\n{e}")
+                self.log(f"Exception running SNOW: {e}", "ERROR", tab="extract")
+                messagebox.showerror("Error", f"Failed to run SNOW:\n{e}")
                 return
 
-            if result.returncode == 0 and os.path.exists(msg_file):
-                with open(msg_file, "r", encoding="utf-8") as f:
-                    extracted_msg = f.read()
-                self.set_message(extracted_msg)
-                self.log("Message extracted successfully!", "SUCCESS", tab="extract")
-                messagebox.showinfo("Success", "Message extracted successfully!")
-                os.remove(msg_file)
-            else:
-                stderr = result.stderr or ""
-                self.log(f"Error: {stderr}", "ERROR", tab="extract")
-                if "Runtime error 217" in stderr or "Runtime error" in stderr:
-                    open_gui = messagebox.askyesno("WBStego runtime error",
-                                                   "WBStego crashed with a runtime error while running command-line mode.\nWould you like to open the WBStego GUI instead to perform the operation manually? (Recommended)")
-                    if open_gui:
-                        try:
-                            subprocess.Popen([wbstego_path], cwd=os.path.dirname(wbstego_path))
-                        except Exception as e:
-                            messagebox.showerror("Error", f"Failed to open WBStego GUI:\n{e}")
+            # Read the extracted message from the file
+            if os.path.exists(msg_file):
+                try:
+                    with open(msg_file, "r", encoding="utf-8") as f:
+                        extracted_msg = f.read()
+                    
+                    # Clean up temp file
+                    os.remove(msg_file)
+                    
+                    if extracted_msg:
+                        self.set_message(extracted_msg)
+                        self.log(f"Message extracted successfully! Length: {len(extracted_msg)} characters", "SUCCESS", tab="extract")
+                        messagebox.showinfo("Success", "Message extracted successfully!")
                     else:
-                        messagebox.showerror("Error", f"Failed to extract message:\n{stderr}")
-                else:
-                    messagebox.showerror("Error", f"Failed to extract message:\n{stderr}")
+                        self.set_message("")
+                        self.log("Message file is empty.", "INFO", tab="extract")
+                        messagebox.showinfo("Info", "No message content found.")
+                except Exception as e:
+                    self.log(f"Error reading extracted message: {e}", "ERROR", tab="extract")
+                    messagebox.showerror("Error", f"Failed to read extracted message:\n{e}")
+            else:
+                # Message file was not created
+                self.log(f"Message file was not created at: {msg_file}", "ERROR", tab="extract")
+                self.log("This could mean:", "ERROR", tab="extract")
+                self.log("1. The password is incorrect", "ERROR", tab="extract")
+                self.log("2. The file doesn't contain a valid SNOW-encoded message", "ERROR", tab="extract")
+                self.log("3. The input file is corrupted or not readable", "ERROR", tab="extract")
+                messagebox.showerror("Error", "Failed to extract message.\n\nNote: Ensure the correct password is used and the file contains a valid SNOW-encoded message.")
         
         except Exception as e:
             self.log(f"Exception: {str(e)}", "ERROR", tab="extract")
             messagebox.showerror("Error", f"An error occurred: {str(e)}")
     
-    def find_wbstego(self):
-        """Find WBStego4Open executable"""
-        possible_paths = [
-            "wbstego4open",
-            "wbstego4open.exe",
-            os.path.join(os.path.dirname(__file__), "..", "Tools", "wbstego4open.exe"),
-            os.path.join(os.path.dirname(__file__), "..", "tools", "wbs43open-win32", "wbStego4.3open.exe"),
-            os.path.join(os.path.dirname(__file__), "..", "Tools", "wbs43open-win32", "wbStego4.3open.exe"),
-            os.path.join(os.path.dirname(__file__), "..", "tools", "wbs43open-win32", "wbStego4.3open.exe"),
-        ]
-        for path in possible_paths:
-            if os.path.exists(path):
-                return path
-        return None
     
+    def find_snow(self):
+        """Find SNOW executable"""
+        possible_paths = [
+            "snow",
+            "snow.exe",
+            os.path.join(os.path.dirname(__file__), "..", "snow.exe"),
+            os.path.join(os.path.dirname(__file__), "..", "tools", "snow.exe"),
+        ]
+        
+        for path in possible_paths:
+            if os.path.isfile(path) and os.access(path, os.X_OK):
+                return path
+        
+        return None
 
 
 class SToolsTool(BaseToolWindow):
