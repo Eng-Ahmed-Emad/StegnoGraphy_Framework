@@ -7,7 +7,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import subprocess
 import os
-from .base_tool import BaseToolWindow
+from .base_tool import BaseToolWindow, find_executable, launch_executable
 
 
 class TextStegoWindow:
@@ -22,15 +22,21 @@ class TextStegoWindow:
         notebook = ttk.Notebook(self.window)
         notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
-        # S-Tools tab
-        stools_frame = ttk.Frame(notebook)
-        notebook.add(stools_frame, text="S-Tools")
-        self.stools_tool = SToolsTool(stools_frame, self.window)
-        
-        # SNOW tab
-        snow_frame = ttk.Frame(notebook)
-        notebook.add(snow_frame, text="SNOW")
-        self.snow_tool = SNOWTool(snow_frame, self.window)
+        # WBStego tab (launcher)
+        wb_frame = ttk.Frame(notebook)
+        notebook.add(wb_frame, text="WBStego4Open")
+        self.wb_tool = WBStegoTool(wb_frame, self.window)
+
+        # Auto-launch when its tab is selected
+        def _on_text_tab_changed(event):
+            try:
+                selected = notebook.tab(notebook.select(), "text")
+                if selected == "WBStego4Open":
+                    self.wb_tool.launch_wbsteo()
+            except Exception:
+                pass
+
+        notebook.bind('<<NotebookTabChanged>>', _on_text_tab_changed)
         
         # Handle window close event
         self.window.protocol("WM_DELETE_WINDOW", self.on_closing)
@@ -44,299 +50,77 @@ class TextStegoWindow:
             pass
 
 
-class SNOWTool(BaseToolWindow):
-    """SNOW (Steganographic Nature Of Whitespace) tool implementation"""
-    
+class WBStegoTool:
+    """WBStego4Open launcher tool"""
+
     def __init__(self, parent, root_window):
+        self.parent = parent
         self.root_window = root_window
-        super().__init__(parent, "SNOW")
+        lbl = ttk.Label(parent, text="WBStego4Open Launcher", font=(None, 11, "bold"))
+        lbl.pack(anchor="w", padx=10, pady=(8, 4))
 
-    def create_hide_tab(self, parent):
-        """Create Hide tab for SNOW"""
-        super().create_hide_tab(parent)
-        # Update browse buttons for text files
-        for widget in parent.winfo_children():
-            if isinstance(widget, ttk.Button) and widget.cget("text") == "Browse":
-                info = widget.grid_info()
-                if info.get("row") == 0:
-                    widget.config(command=lambda: self.browse_input_file([
-                        ("Text files", "*.txt *.html *.xml"), ("All files", "*.*")
-                    ]))
-                elif info.get("row") == 1:
-                    widget.config(command=lambda: self.browse_output_file([
-                        ("Text files", "*.txt *.html *.xml"), ("All files", "*.*")
-                    ]))
-    
-    def create_extract_tab(self, parent):
-        """Create Extract tab for SNOW"""
-        super().create_extract_tab(parent)
-        # Update browse button for text files
-        for widget in parent.winfo_children():
-            if isinstance(widget, ttk.Button) and widget.cget("text") == "Browse":
-                widget.config(command=lambda: self.browse_input_file([
-                    ("Text files", "*.txt *.html *.xml"), ("All files", "*.*")
-                ]))
-    
-    def hide_message(self):
-        """Hide message using SNOW"""
-        if not self.validate_inputs(require_message=True, require_password=True, tab="hide"):
-            return
-        
-        self.clear_log("hide")
-        self.log("Starting SNOW hide operation...", tab="hide")
-        
-        try:
-            snow_path = self.find_snow()
-            if not snow_path:
-                self.log("SNOW executable not found.", "ERROR", tab="hide")
-                messagebox.showerror("Error", "SNOW executable not found. Please ensure snow.exe is available.")
-                return
-            
-            # Create message file
-            msg_file = os.path.join(os.path.dirname(self.output_file.get()), "temp_msg.txt")
-            with open(msg_file, "w", encoding="utf-8") as f:
-                f.write(self.get_message())
-            
-            # SNOW encode command
-            cmd = [
-                snow_path,
-                "-C",
-                "-p", self.password.get(),
-                "-m", msg_file,
-                self.input_file.get(),
-                self.output_file.get()
-            ]
-            
-            self.log(f"Running: {' '.join(cmd)}", tab="hide")
-            try:
-                result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
-            except Exception as e:
-                self.log(f"Exception running SNOW: {e}", "ERROR", tab="hide")
-                messagebox.showerror("Error", f"Failed to run SNOW:\n{e}")
-                return
-            
-            if os.path.exists(msg_file):
-                os.remove(msg_file)
-            
-            if result.returncode == 0:
-                self.log("Message hidden successfully!", "SUCCESS", tab="hide")
-                messagebox.showinfo("Success", f"Message hidden successfully!\nOutput: {self.output_file.get()}")
+        info = ttk.Label(parent, text="Launch the WBStego4Open GUI application to hide or extract messages in text files.")
+        info.pack(anchor="w", padx=10, pady=(0, 8))
+
+        btn_log = ttk.Button(parent, text="Launch with logs", command=self.launch_wbsteo_with_logging)
+        btn_log.pack(anchor="w", padx=10, pady=(0, 8))
+
+    def launch_wbsteo(self):
+        wb_path = self.find_wbsteo()
+
+        def try_open(path):
+            tools_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+            wbs_dir = os.path.join(tools_dir, 'wbs43open-win32')
+            cwd = wbs_dir if os.path.isdir(wbs_dir) else None
+            ok = launch_executable(path, cwd=cwd)
+            if ok:
+                messagebox.showinfo("Success", "WBStego4Open GUI application opened!\nUse the application to hide or extract messages.")
             else:
-                stderr = result.stderr or ""
-                self.log(f"Error: {stderr}", "ERROR", tab="hide")
-                messagebox.showerror("Error", f"Failed to hide message:\n{stderr}")
-        
-        except Exception as e:
-            self.log(f"Exception: {str(e)}", "ERROR", tab="hide")
-            messagebox.showerror("Error", f"An error occurred: {str(e)}")
-    
-    def extract_message(self):
-        """Extract message using SNOW"""
-        if not self.validate_inputs(require_message=False, require_password=True, tab="extract"):
+                messagebox.showerror("Error", f"Failed to open WBStego4Open: \n{path}")
+            return ok
+    def find_wbsteo(self):
+        """Find WBStego4Open executable or shortcut"""
+        possible_paths = [
+            os.path.join(os.path.dirname(__file__), "wbStego4.3open.exe"),
+            os.path.join(os.path.dirname(__file__), "wbStego4.3open.exe.lnk"),
+            os.path.join(os.path.dirname(__file__), "wbs43open-win32", "wbStego4.3open.exe"),
+            os.path.join(os.path.dirname(__file__), "..", "Tools", "wbStego4.3open.exe"),
+            os.path.join(os.path.dirname(__file__), "..", "tools", "wbStego4.3open.exe"),
+            os.path.join(os.path.dirname(__file__), "..", "Tools", "wbs43open-win32", "wbStego4.3open.exe"),
+            os.path.join(os.path.dirname(__file__), "..", "Tools", "WBStego4Open.exe"),
+            "wbStego4.3open.exe",
+            "WBStego4Open.exe",
+            "WBStego4.3open.exe",
+        ]
+        return find_executable(possible_paths)
+
+    def launch_wbsteo_with_logging(self):
+        """Launch WBStego but capture stdout/stderr to a log file for debugging"""
+        wb_path = self.find_wbsteo()
+        if not wb_path:
+            messagebox.showerror("Error", "WBStego executable not found. Please ensure wbStego4.3open.exe is in the tools folder.")
             return
-        
-        self.clear_log("extract")
-        self.log("Starting SNOW extract operation...", tab="extract")
-        
+
+        abs_path = os.path.abspath(wb_path)
+        tools_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+        wbs_dir = os.path.join(tools_dir, 'wbs43open-win32')
+        cwd = wbs_dir if os.path.isdir(wbs_dir) else os.path.dirname(abs_path)
+
+        log_path = os.path.join(tools_dir, 'wbsteo_launch_log.txt')
         try:
-            snow_path = self.find_snow()
-            if not snow_path:
-                self.log("SNOW executable not found.", "ERROR", tab="extract")
-                messagebox.showerror("Error", "SNOW executable not found. Please ensure snow.exe is available.")
-                return
-            
-            input_file = self.input_file.get()
-            if not os.path.exists(input_file):
-                self.log(f"Input file not found: {input_file}", "ERROR", tab="extract")
-                messagebox.showerror("Error", f"Input file not found: {input_file}")
-                return
-            
-            # Create temporary file to store extracted message (use absolute path with forward slashes)
-            temp_dir = os.path.dirname(os.path.abspath(input_file))
-            msg_file = os.path.join(temp_dir, "snow_extracted_msg.txt")
-            
-            # Convert paths to use forward slashes for consistency
-            snow_path_normalized = snow_path.replace("\\", "/")
-            input_file_normalized = input_file.replace("\\", "/")
-            msg_file_normalized = msg_file.replace("\\", "/")
-            
-            # SNOW decode command - use -m to specify output message file
-            cmd = [
-                snow_path_normalized,
-                "-C",
-                "-Q",
-                "-p", self.password.get(),
-                "-m", msg_file_normalized,
-                input_file_normalized
-            ]
-            
-            self.log(f"SNOW path: {snow_path_normalized}", tab="extract")
-            self.log(f"Input file: {input_file_normalized}", tab="extract")
-            self.log(f"Output file: {msg_file_normalized}", tab="extract")
-            self.log(f"Running: {' '.join(cmd)}", tab="extract")
-            
-            try:
-                result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
-                self.log(f"Return code: {result.returncode}", tab="extract")
-                
-                if result.stdout:
-                    self.log(f"Stdout: {result.stdout}", tab="extract")
-                if result.stderr:
-                    self.log(f"Stderr: {result.stderr}", tab="extract")
-                
-            except Exception as e:
-                self.log(f"Exception running SNOW: {e}", "ERROR", tab="extract")
-                messagebox.showerror("Error", f"Failed to run SNOW:\n{e}")
-                return
-
-            # Read the extracted message from the file
-            if os.path.exists(msg_file):
-                try:
-                    with open(msg_file, "r", encoding="utf-8") as f:
-                        extracted_msg = f.read()
-                    
-                    # Clean up temp file
-                    os.remove(msg_file)
-                    
-                    if extracted_msg:
-                        self.set_message(extracted_msg)
-                        self.log(f"Message extracted successfully! Length: {len(extracted_msg)} characters", "SUCCESS", tab="extract")
-                        messagebox.showinfo("Success", "Message extracted successfully!")
-                    else:
-                        self.set_message("")
-                        self.log("Message file is empty.", "INFO", tab="extract")
-                        messagebox.showinfo("Info", "No message content found.")
-                except Exception as e:
-                    self.log(f"Error reading extracted message: {e}", "ERROR", tab="extract")
-                    messagebox.showerror("Error", f"Failed to read extracted message:\n{e}")
-            else:
-                # Message file was not created
-                self.log(f"Message file was not created at: {msg_file}", "ERROR", tab="extract")
-                self.log("This could mean:", "ERROR", tab="extract")
-                self.log("1. The password is incorrect", "ERROR", tab="extract")
-                self.log("2. The file doesn't contain a valid SNOW-encoded message", "ERROR", tab="extract")
-                self.log("3. The input file is corrupted or not readable", "ERROR", tab="extract")
-                messagebox.showerror("Error", "Failed to extract message.\n\nNote: Ensure the correct password is used and the file contains a valid SNOW-encoded message.")
-        
+            result = subprocess.run([abs_path], cwd=cwd, capture_output=True, timeout=30)
+            with open(log_path, 'wb') as f:
+                f.write(result.stdout or b'')
+                f.write(b"\n--- STDERR ---\n")
+                f.write(result.stderr or b'')
+            messagebox.showinfo("Launched", f"WBStego launched and logs written to:\n{log_path}")
         except Exception as e:
-            self.log(f"Exception: {str(e)}", "ERROR", tab="extract")
-            messagebox.showerror("Error", f"An error occurred: {str(e)}")
+            messagebox.showerror("Error", f"Failed to launch WBStego: {e}\nLogs: {log_path}")
+    # SNOW support removed - SNOW detection/commands are no longer part of this toolkit
     
     
-    def find_snow(self):
-        """Find SNOW executable"""
-        possible_paths = [
-            "snow",
-            "snow.exe",
-            os.path.join(os.path.dirname(__file__), "..", "snow.exe"),
-            os.path.join(os.path.dirname(__file__), "..", "tools", "snow.exe"),
-        ]
-        
-        for path in possible_paths:
-            if os.path.isfile(path) and os.access(path, os.X_OK):
-                return path
-        
-        return None
+    # SNOW support removed - SNOW detection/commands are no longer part of this toolkit
 
 
-class SToolsTool(BaseToolWindow):
-    """S-Tools tool implementation"""
-    
-    def __init__(self, parent, root_window):
-        self.root_window = root_window
-        super().__init__(parent, "S-Tools")
-    
-    def create_hide_tab(self, parent):
-        """Create Hide tab with S-Tools file types"""
-        super().create_hide_tab(parent)
-        # Update browse buttons for S-Tools supported files
-        for widget in parent.winfo_children():
-            if isinstance(widget, ttk.Button) and widget.cget("text") == "Browse":
-                info = widget.grid_info()
-                if info.get("row") == 0:
-                    widget.config(command=lambda: self.browse_input_file([
-                        ("Image files", "*.bmp *.gif"), ("Audio files", "*.wav"), ("All files", "*.*")
-                    ]))
-                elif info.get("row") == 1:
-                    widget.config(command=lambda: self.browse_output_file([
-                        ("Image files", "*.bmp *.gif"), ("Audio files", "*.wav"), ("All files", "*.*")
-                    ]))
-    
-    def create_extract_tab(self, parent):
-        """Create Extract tab with S-Tools file types"""
-        super().create_extract_tab(parent)
-        # Update browse button for S-Tools supported files
-        for widget in parent.winfo_children():
-            if isinstance(widget, ttk.Button) and widget.cget("text") == "Browse":
-                widget.config(command=lambda: self.browse_input_file([
-                    ("Image files", "*.bmp *.gif"), ("Audio files", "*.wav"), ("All files", "*.*")
-                ]))
-    
-    def open_stools(self):
-        """Open S-Tools GUI application"""
-        self.clear_log("hide")
-        self.log("Opening S-Tools GUI application...", tab="hide")
-        
-        stools_path = self.find_stools()
-        if stools_path:
-            try:
-                subprocess.Popen([stools_path])
-                self.log(f"S-Tools opened successfully: {stools_path}", "SUCCESS", tab="hide")
-                messagebox.showinfo("Success", "S-Tools GUI application opened!")
-            except Exception as e:
-                self.log(f"Error opening S-Tools: {str(e)}", "ERROR", tab="hide")
-                messagebox.showerror("Error", f"Failed to open S-Tools:\n{str(e)}")
-        else:
-            self.log("S-Tools executable not found.", "ERROR", tab="hide")
-            messagebox.showerror("Error", "S-Tools executable not found.\nPlease ensure S-Tools.exe is in the Tools directory.")
-    
-    def hide_message(self):
-        """Hide message - Launch GUI tool"""
-        self.clear_log("hide")
-        self.log("Opening S-Tools GUI application...", tab="hide")
-        
-        stools_path = self.find_stools()
-        if stools_path:
-            try:
-                subprocess.Popen([stools_path])
-                self.log(f"S-Tools opened successfully: {stools_path}", "SUCCESS", tab="hide")
-                messagebox.showinfo("Success", "S-Tools GUI application opened!\nUse the application to hide your message.")
-            except Exception as e:
-                self.log(f"Error opening S-Tools: {str(e)}", "ERROR", tab="hide")
-                messagebox.showerror("Error", f"Failed to open S-Tools:\n{str(e)}")
-        else:
-            self.log("S-Tools executable not found.", "ERROR", tab="hide")
-            messagebox.showerror("Error", "S-Tools executable not found.\nPlease ensure S-Tools.exe is in the Tools directory.")
-    
-    def extract_message(self):
-        """Extract message - Launch GUI tool"""
-        self.clear_log("extract")
-        self.log("Opening S-Tools GUI application...", tab="extract")
-        
-        stools_path = self.find_stools()
-        if stools_path:
-            try:
-                subprocess.Popen([stools_path])
-                self.log(f"S-Tools opened successfully: {stools_path}", "SUCCESS", tab="extract")
-                messagebox.showinfo("Success", "S-Tools GUI application opened!\nUse the application to extract your message.")
-            except Exception as e:
-                self.log(f"Error opening S-Tools: {str(e)}", "ERROR", tab="extract")
-                messagebox.showerror("Error", f"Failed to open S-Tools:\n{str(e)}")
-        else:
-            self.log("S-Tools executable not found.", "ERROR", tab="extract")
-            messagebox.showerror("Error", "S-Tools executable not found.\nPlease ensure S-Tools.exe is in the Tools directory.")
-    
-    def find_stools(self):
-        """Find S-Tools executable"""
-        possible_paths = [
-            os.path.join(os.path.dirname(__file__), "..", "Tools", "S-Tools", "s-tools4", "S-Tools.exe"),
-            os.path.join(os.path.dirname(__file__), "..", "tools", "S-Tools", "s-tools4", "S-Tools.exe"),
-            "S-Tools.exe",
-            "s-tools.exe",
-        ]
-        for path in possible_paths:
-            abs_path = os.path.abspath(path)
-            if os.path.exists(abs_path):
-                return abs_path
-        return None
+    # S-Tools support removed - S-Tools detection/commands are no longer part of this toolkit
 

@@ -271,3 +271,39 @@ class BaseToolWindow:
             return False
         
         return True
+
+
+def find_executable(possible_paths):
+    """Return the first existing absolute path from the list or None.
+    Accepts a list of relative or absolute paths and returns the absolute path
+    of the first file that exists.
+    """
+    for path in possible_paths:
+        abs_path = os.path.abspath(path)
+        if os.path.exists(abs_path):
+            return abs_path
+    return None
+
+
+def launch_executable(path, follow_lnk=True, cwd=None, extra_args=None):
+    """Launch an executable or shortcut.
+    - If `path` ends with `.lnk` and `follow_lnk` is True, use `os.startfile` to follow the shortcut on Windows.
+    - Otherwise, use `subprocess.Popen` with `cwd` defaulting to the executable directory.
+    - `extra_args` may be a list of additional command-line arguments to pass after the executable path.
+    Returns True if launch started, False otherwise.
+    """
+    import subprocess
+    try:
+        if follow_lnk and path.lower().endswith('.lnk'):
+            # os.startfile will follow the shortcut and ignore extra args
+            os.startfile(path)
+            return True
+        abs_path = os.path.abspath(path)
+        run_cwd = cwd or os.path.dirname(abs_path)
+        cmd = [abs_path]
+        if extra_args:
+            cmd += list(extra_args)
+        subprocess.Popen(cmd, cwd=run_cwd)
+        return True
+    except Exception:
+        return False

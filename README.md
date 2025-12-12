@@ -1,54 +1,8 @@
-# 🛡️ Steganography Toolkit  
-### By **Ahmed Emad Eldeen Abdelmoneam**
+# Steganography Toolkit
 
-Using **Wazuh SIEM and EDR**, **Atomic Red Team**, **YARA**, **Suricata (IDS)**  **VirusTotal Auto-Removal**,**Custom Rules By 3omda** , **SocSOCFortress Wazuh Rules**
+A comprehensive Python GUI application for various steganography tools, designed for educational and research purposes.
 
-<!-- Badges row -->
-![License](https://img.shields.io/badge/License-MIT-blue.svg)
-![Contributions Welcome](https://img.shields.io/badge/Contributions-Welcome-brightgreen.svg)
-![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20Windows-lightgrey.svg)
-![Security](https://img.shields.io/badge/SOC-Security_Operations_Center-critical.svg)
-
-<!-- Tool / project badges -->
-![Wazuh](https://img.shields.io/badge/Wazuh-%23000000?style=flat&logo=wazuh&logoColor=white)
-![Atomic Red Team](https://img.shields.io/badge/Atomic_Red_Team-%23FF6A00?style=flat&logo=atom&logoColor=white)
-![Suricata](https://img.shields.io/badge/Suricata-%230078D7?style=flat&logo=suricata&logoColor=white)
-![Hacking / Kali](https://img.shields.io/badge/Hacking-%23A0B0C0?style=flat&logo=kali-linux&logoColor=white)
-
-<!-- Added badges -->
-![YARA](https://img.shields.io/badge/YARA-%23219827?style=flat&logo=yara&logoColor=white)
-![VirusTotal](https://img.shields.io/badge/VirusTotal-%23FF4747?style=flat&logo=virustotal&logoColor=white)
-![FIM (File Integrity Monitoring)](https://img.shields.io/badge/FIM-%23663399?style=flat&logo=sqlite&logoColor=white)
-![Auditing & Logging](https://img.shields.io/badge/Auditing_%26_Logging-%23007ACC?style=flat&logo=elastic&logoColor=white)
-![Firewall Hardening](https://img.shields.io/badge/Firewall-Hardening-%230F172A?style=flat&logo=linux&logoColor=white)
-
-
-<!-- Optional: logos row using project assets (uncomment & add files under assets/logos/) -->
-<!--
-<p align="center">
-  <img src="assets/logos/wazuh.svg" alt="Wazuh" width="120" height="auto" />
-  <img src="assets/logos/atomic-red-team.svg" alt="Atomic Red Team" width="120" height="auto" />
-  <img src="assets/logos/suricata.svg" alt="Suricata" width="120" height="auto" />
-  <img src="assets/logos/kali.svg" alt="Kali / Hacking" width="120" height="auto" />
-</p>
--->
-## 👨‍💻 Authors & Contributions
-
-**SOC Team Lead:**  
-👤 **Ahmed Emad Eldeen Abdelmoneam**
-
-<table>
-  <tr>
-    <td>
-      <ul>
-        <li>🔗 <b>LinkedIn:</b> <a href="https://www.linkedin.com/in/0x3omda/">linkedin.com/in/0x3omda</a></li>
-        <li>🌐 <b>Portfolio:</b> <a href="https://eng-ahmed-emad.github.io/AhmedEmad-Dev/">Portfolio</a></li>
-      </ul>
-    </td>
-    <td><img align="right" height="153" width="159" src="gif/anime-frieren.gif" /></td>
-    <td><img align="right" height="153" width="159" src="gif/giphy.gif" /></td>
-  </tr>
-</table>
+## Features
 
 This toolkit provides a unified interface for multiple steganography tools across different data types:
 
@@ -66,15 +20,14 @@ This toolkit provides a unified interface for multiple steganography tools acros
 
 ### Text Steganography
 - **WBStego4Open**: Hide and extract messages in text files (TXT, HTML, XML)
-- **S-Tools**: GUI-based steganography tool for images and audio
+-- **S-Tools**: (Removed) GUI-based steganography tool for images and audio
 
 ### ADS Tools (Alternate Data Streams)
 - **Streams**: Hide and extract messages using NTFS Alternate Data Streams
 - **ADS Viewer**: GUI tool for viewing and managing ADS
 
 ### Hex/Binary Steganography
-- **Hex Editor Neo**: GUI hex editor for binary file manipulation
-- **GMER**: Rootkit detection and binary analysis tool
+- **HxD**: Popular hex editor for binary file inspection and editing
 
 ## Requirements
 
@@ -115,7 +68,7 @@ python steganography_toolkit.py
 - If not found, the application will simulate the operation
 - Install the tools separately for full functionality
 
-#### GUI Tools (S-Tools, DeepSound, etc.)
+#### GUI Tools (DeepSound, etc.)
 - These tools open their standalone GUI applications
 - Use the "Open [Tool] GUI" button to launch them
 - Follow the tool's own interface for operations
@@ -141,7 +94,7 @@ Stegano project/
 │   └── hex_tools.py            # Hex/Binary tools
 ├── Tools/                       # External tool executables (if available)
 │   ├── GIFShuff-Tool/
-│   ├── S-Tools/
+│   ├── S-Tools/ (deprecated, not used in this build)
 │   └── SteganographyX Plus/
 ├── requirements.txt            # Python dependencies (none required)
 └── README.md                   # This file

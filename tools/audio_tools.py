@@ -7,7 +7,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import subprocess
 import os
-from .base_tool import BaseToolWindow
+from .base_tool import BaseToolWindow, find_executable, launch_executable
 
 
 class AudioStegoWindow:
@@ -209,9 +209,9 @@ class MP3StegoTool(BaseToolWindow):
         """Find MP3Stego executable (Encode.exe for hide, Decode.exe for extract)"""
         # MP3Stego uses Encode.exe for hiding and Decode.exe for extracting
         possible_paths = [
+            os.path.join(os.path.dirname(__file__), "MP3Stego", "Encode.exe"),
             os.path.join(os.path.dirname(__file__), "..", "Tools", "MP3Stego", "Encode.exe"),
             os.path.join(os.path.dirname(__file__), "..", "tools", "MP3Stego", "Encode.exe"),
-            os.path.join(os.path.dirname(__file__), "..", "Tools", "MP3Stego", "Encode.exe"),
             os.path.join(os.path.dirname(__file__), "..", "Tools", "Encode.exe"),
             "Encode.exe",
             "mp3stego.exe",
@@ -225,6 +225,7 @@ class MP3StegoTool(BaseToolWindow):
     def find_mp3stego_decode(self):
         """Find MP3Stego Decode executable"""
         possible_paths = [
+            os.path.join(os.path.dirname(__file__), "MP3Stego", "Decode.exe"),
             os.path.join(os.path.dirname(__file__), "..", "Tools", "MP3Stego", "Decode.exe"),
             os.path.join(os.path.dirname(__file__), "..", "tools", "MP3Stego", "Decode.exe"),
             os.path.join(os.path.dirname(__file__), "..", "Tools", "Decode.exe"),
@@ -272,17 +273,22 @@ class DeepSoundTool(BaseToolWindow):
     def find_deepsound(self):
         """Find DeepSound executable"""
         possible_paths = [
+            # Check for a Windows shortcut inside the same tools folder (common in this repo)
+            os.path.join(os.path.dirname(__file__), "DeepSound.exe.lnk"),
+            os.path.join(os.path.dirname(__file__), "DeepSound.lnk"),
+            os.path.join(os.path.dirname(__file__), "DeepSound.exe"),
+            # Also check the repo Tools/ (case differences) and nested folder
             os.path.join(os.path.dirname(__file__), "..", "Tools", "DeepSound.exe"),
+            os.path.join(os.path.dirname(__file__), "..", "Tools", "DeepSound.exe.lnk"),
             os.path.join(os.path.dirname(__file__), "..", "tools", "DeepSound.exe"),
+            os.path.join(os.path.dirname(__file__), "..", "tools", "DeepSound.exe.lnk"),
             os.path.join(os.path.dirname(__file__), "..", "Tools", "DeepSound", "DeepSound.exe"),
+            # Generic names that might be on the PATH
             "DeepSound.exe",
             "deepsound.exe",
         ]
-        for path in possible_paths:
-            abs_path = os.path.abspath(path)
-            if os.path.exists(abs_path):
-                return abs_path
-        return None
+        return find_executable(possible_paths)
+        return find_executable(possible_paths)
     
     def hide_message(self):
         """Hide message - Launch GUI tool"""
@@ -290,18 +296,13 @@ class DeepSoundTool(BaseToolWindow):
         self.log("Opening DeepSound GUI application...", tab="hide")
         deepsound_path = self.find_deepsound()
         def try_open(path):
-            try:
-                # If it's a .lnk (shortcut) or any file, use os.startfile on Windows to follow the link.
-                if path.lower().endswith('.lnk'):
-                    os.startfile(path)
-                else:
-                    subprocess.Popen([path])
+            ok = launch_executable(path)
+            if ok:
                 self.log(f"DeepSound opened successfully: {path}", "SUCCESS", tab="hide")
                 messagebox.showinfo("Success", "DeepSound GUI application opened!\nUse the application to hide your message.")
-                return True
-            except Exception as e:
-                self.log(f"Error opening DeepSound: {str(e)}", "ERROR", tab="hide")
-                return False
+            else:
+                self.log(f"Error opening DeepSound: {path}", "ERROR", tab="hide")
+            return ok
 
         if deepsound_path and try_open(deepsound_path):
             return
@@ -327,17 +328,13 @@ class DeepSoundTool(BaseToolWindow):
         self.log("Opening DeepSound GUI application...", tab="extract")
         deepsound_path = self.find_deepsound()
         def try_open(path):
-            try:
-                if path.lower().endswith('.lnk'):
-                    os.startfile(path)
-                else:
-                    subprocess.Popen([path])
+            ok = launch_executable(path)
+            if ok:
                 self.log(f"DeepSound opened successfully: {path}", "SUCCESS", tab="extract")
                 messagebox.showinfo("Success", "DeepSound GUI application opened!\nUse the application to extract your message.")
-                return True
-            except Exception as e:
-                self.log(f"Error opening DeepSound: {str(e)}", "ERROR", tab="extract")
-                return False
+            else:
+                self.log(f"Error opening DeepSound: {path}", "ERROR", tab="extract")
+            return ok
 
         if deepsound_path and try_open(deepsound_path):
             return

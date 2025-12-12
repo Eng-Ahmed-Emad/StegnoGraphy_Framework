@@ -4,10 +4,10 @@ GIF Shuffle Tool
 """
 
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog
 import subprocess
 import os
-from .base_tool import BaseToolWindow
+from .base_tool import BaseToolWindow, find_executable, launch_executable
 
 
 class VideoStegoWindow:
@@ -31,6 +31,17 @@ class VideoStegoWindow:
         deegger_frame = ttk.Frame(notebook)
         notebook.add(deegger_frame, text="DeEgger Embedder")
         self.deegger_tool = DeEggerTool(deegger_frame, self.window)
+
+        # Auto-launch DeEgger when its tab is selected
+        def _on_video_tab_changed(event):
+            try:
+                selected = notebook.tab(notebook.select(), "text")
+                if selected == "DeEgger Embedder":
+                    self.deegger_tool.launch_deegger()
+            except Exception:
+                pass
+
+        notebook.bind('<<NotebookTabChanged>>', _on_video_tab_changed)
 
 
 class GIFShuffleTool(BaseToolWindow):
@@ -192,6 +203,8 @@ class GIFShuffleTool(BaseToolWindow):
     def find_gifshuf(self):
         """Find GIFShuf executable"""
         possible_paths = [
+            os.path.join(os.path.dirname(__file__), "GIFShuff-Tool", "GIFSHUF.EXE"),
+            os.path.join(os.path.dirname(__file__), "GIFShuff-Tool", "GIFSHUF.exe"),
             os.path.join(os.path.dirname(__file__), "..", "Tools", "GIFShuff-Tool", "GIFSHUF.EXE"),
             os.path.join(os.path.dirname(__file__), "..", "tools", "GIFShuff-Tool", "GIFSHUF.EXE"),
             os.path.join(os.path.dirname(__file__), "..", "Tools", "GIFShuff-Tool", "GIFSHUF.exe"),
@@ -227,13 +240,45 @@ class DeEggerTool:
         btn.pack(anchor="w", padx=10, pady=(0, 8))
 
     def launch_deegger(self):
-        # Path provided by the user
-        deegger_path = r"E:\Ahmed Projects\StegnoGraphy_Framework\tools\DeEgger Embedder.exe"
-        if not os.path.exists(deegger_path):
-            messagebox.showerror("Error", f"DeEgger executable not found at:\n{deegger_path}")
+        # Try detected or packaged paths first
+        deegger_path = self.find_deegger()
+
+        def try_open(path):
+            ok = launch_executable(path)
+            if ok:
+                messagebox.showinfo("Success", "DeEgger GUI application opened!\nUse the application to hide or extract messages.")
+            else:
+                messagebox.showerror("Error", f"Failed to open DeEgger: \n{path}")
+            return ok
+
+        if deegger_path and try_open(deegger_path):
             return
-        try:
-            subprocess.Popen([deegger_path])
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to launch DeEgger:\n{str(e)}")
+
+        # If not found, ask the user to locate the exe or shortcut
+        user_choice = filedialog.askopenfilename(
+            title="Locate DeEgger executable",
+            initialdir=os.path.abspath(os.path.join(os.path.dirname(__file__), '..')),
+            filetypes=[("Executables", "*.exe;*.lnk"), ("All files", "*.*")]
+        )
+        if user_choice:
+            try_open(user_choice)
+
+    def find_deegger(self):
+        """Find DeEgger executable or shortcut"""
+        possible_paths = [
+            os.path.join(os.path.dirname(__file__), "DeEgger Embedder.lnk"),
+            os.path.join(os.path.dirname(__file__), "DeEgger Embedder.exe"),
+            os.path.join(os.path.dirname(__file__), "DeEgger Embedder.exe.lnk"),
+            os.path.join(os.path.dirname(__file__), "..", "Tools", "DeEgger Embedder.exe"),
+            os.path.join(os.path.dirname(__file__), "..", "Tools", "DeEgger Embedder.lnk"),
+            os.path.join(os.path.dirname(__file__), "..", "tools", "DeEgger Embedder.exe"),
+            os.path.join(os.path.dirname(__file__), "..", "tools", "DeEgger Embedder.lnk"),
+            os.path.join(os.path.dirname(__file__), "..", "Tools", "DeEgger Embedder", "DeEgger Embedder.exe"),
+            "DeEgger Embedder.exe",
+            "DeEgger Embedder.lnk",
+            "deegger embedder.exe",
+            "deegger.exe",
+        ]
+        return find_executable(possible_paths)
+        return find_executable(possible_paths)
 

@@ -4,9 +4,10 @@ ADS Viewer only
 """
 
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog
 import subprocess
 import os
+from .base_tool import find_executable, launch_executable
 
 
 class ADSToolsWindow:
@@ -25,6 +26,17 @@ class ADSToolsWindow:
         adsviewer_frame = ttk.Frame(notebook)
         notebook.add(adsviewer_frame, text="ADS Viewer")
         self.adsviewer_tool = ADSViewerTool(adsviewer_frame, self.window)
+
+        # Auto-open ADS Viewer when its tab is selected
+        def _on_ads_tab_changed(event):
+            try:
+                selected = notebook.tab(notebook.select(), "text")
+                if selected == "ADS Viewer":
+                    self.adsviewer_tool.launch_viewer()
+            except Exception:
+                pass
+
+        notebook.bind('<<NotebookTabChanged>>', _on_ads_tab_changed)
 
 
 class ADSViewerTool:
@@ -54,26 +66,39 @@ class ADSViewerTool:
         """Find ADS Viewer executable"""
         possible_paths = [
             "D:\\ADSView.exe",
+            os.path.join(os.path.dirname(__file__), "ADS Viewer.exe"),
+            os.path.join(os.path.dirname(__file__), "ADS Viewer.exe.lnk"),
             os.path.join(os.path.dirname(__file__), "..", "Tools", "ADSViewer.exe"),
             os.path.join(os.path.dirname(__file__), "..", "tools", "ADSViewer.exe"),
             os.path.join(os.path.dirname(__file__), "..", "Tools", "ADS Viewer.exe"),
+            os.path.join(os.path.dirname(__file__), "..", "tools", "ADS Viewer.exe"),
             "ADSViewer.exe",
             "adsviewer.exe",
         ]
-        for path in possible_paths:
-            abs_path = os.path.abspath(path)
-            if os.path.exists(abs_path):
-                return abs_path
-        return None
+        return find_executable(possible_paths)
     
     def launch_viewer(self):
         """Launch ADS Viewer GUI"""
         adsviewer_path = self.find_ads_viewer()
-        if adsviewer_path:
-            try:
-                subprocess.Popen([adsviewer_path])
+
+        def try_open(path):
+            ok = launch_executable(path)
+            if ok:
                 messagebox.showinfo("Success", "ADS Viewer launched successfully!")
-            except Exception as e:
-                messagebox.showerror("Error", f"Failed to launch ADS Viewer:\n{str(e)}")
+            else:
+                messagebox.showerror("Error", f"Failed to launch ADS Viewer:\n{path}")
+            return ok
+
+        if adsviewer_path and try_open(adsviewer_path):
+            return
+
+        # Ask the user to locate it if not found
+        user_choice = filedialog.askopenfilename(
+            title="Locate ADS Viewer executable",
+            initialdir=os.path.abspath(os.path.join(os.path.dirname(__file__), '..')),
+            filetypes=[("Executables", "*.exe;*.lnk"), ("All files", "*.*")]
+        )
+        if user_choice:
+            try_open(user_choice)
         else:
-            messagebox.showerror("Error", "ADSView.exe not found.\nPlease ensure it's in D:\\ or the Tools folder.")
+            messagebox.showerror("Error", "ADS Viewer executable not found.\nPlease ensure ADS Viewer.exe is available in the Tools folder.")

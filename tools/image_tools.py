@@ -180,6 +180,7 @@ class SteghideTool(BaseToolWindow):
         """Find steghide executable"""
         # Check Tools folder first
         possible_paths = [
+            os.path.join(os.path.dirname(__file__), "steghide", "steghide.exe"),
             os.path.join(os.path.dirname(__file__), "..", "Tools", "steghide", "steghide.exe"),
             os.path.join(os.path.dirname(__file__), "..", "tools", "steghide", "steghide.exe"),
             os.path.join(os.path.dirname(__file__), "..", "Tools", "steghide.exe"),
@@ -244,6 +245,7 @@ class XiaoSteganographyTool(BaseToolWindow):
     def find_xiao_steganography(self):
         """Find Xiao Steganography executable"""
         possible_paths = [
+            os.path.join(os.path.dirname(__file__), "Xiao Stenography.lnk"),
             os.path.join(os.path.dirname(__file__), "..", "Tools", "Xiao Stenography.lnk"),
             os.path.join(os.path.dirname(__file__), "..", "tools", "Xiao Stenography.lnk"),
             os.path.join(os.path.dirname(__file__), "..", "Tools", "XiaoSteganography.exe"),

@@ -133,7 +133,7 @@ class SteganographyToolkit:
         self.create_category_button(
             categories_frame, 1, 1,
             "Text Steganography",
-            "WBStego4Open\nS-Tools",
+            "WBStego4Open",
             lambda: TextStegoWindow(self.root)
         )
         
@@ -149,7 +149,7 @@ class SteganographyToolkit:
         self.create_category_button(
             categories_frame, 2, 1,
             "Hex/Binary Steganography",
-            "Hex Editor Neo\nGMER",
+            "HxD",
             lambda: HexStegoWindow(self.root)
         )
         
